@@ -1,0 +1,21 @@
+
+function (add_boost_tests EXECUTABLE EXTRA_ARGS)
+  if (NOT ARGN)
+    message(FATAL_ERROR "No source files given to `add_boost_tests'")
+  endif()
+
+  # Идем в исходных кодах макро BOOST_AUTO_TEST_CASE и добавляем тест для найденного имени.
+  foreach(source ${ARGN})
+    file(STRINGS "${source}" found_tests REGEX "BOOST_(AUTO|FIXTURE)_TEST_CASE")
+    foreach(hit ${found_tests})
+        string(REGEX MATCH ".*\\(([a-zA-Z0-9]+_[a-zA-Z0-9]+_[a-zA-z0-9]+)(,|\\)).*" found_name ${hit})
+        if (CMAKE_MATCH_1)
+            message(STATUS "adding test: ${CMAKE_MATCH_1}")
+            add_test("${CMAKE_MATCH_1}" ${EXECUTABLE} --run_test=${CMAKE_MATCH_1} ${EXTRA_ARGS})
+        else()
+            string(REGEX MATCH ".*\\(([a-zA-Z0-9_]+)(,|\\)).*" incorrect_proc ${hit})
+            message(WARNING "test procedure name '${CMAKE_MATCH_1}' at '${source}' does not match naming policy")
+        endif()
+    endforeach()
+  endforeach()
+endfunction(add_boost_tests)
